@@ -19,7 +19,8 @@ object StrategyBenchmark {
     val strategies = Map(
       "Random" -> RandomStrategy,
       "Greedy" -> GreedyStrategy,
-      "Max Tiles" -> MaxTilesStrategy
+      "Max Tiles" -> MaxTilesStrategy,
+      "Most Options" -> MostOptionsStrategy
     )
 
     StrategyBenchmark.compareStrategies(attempts, strategies)
