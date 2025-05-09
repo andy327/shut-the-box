@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 case class Dice(n: Int = 2) {
   private val rand = new scala.util.Random
   private val buffer = new Array[Int](n)
-  def roll: Int = buffer.map(_ => rand.nextInt(6) + 1).sum
+  def roll: Roll = buffer.map(_ => rand.nextInt(6) + 1).sum
 }
 
 object ShutTheBox {

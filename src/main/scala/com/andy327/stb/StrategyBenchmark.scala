@@ -13,6 +13,9 @@ object StrategyBenchmark {
       val winRate = wins * 100.0 / attempts
       println("%-20s %-10.3f %-10.3f".format(name, winRate, elapsed))
     }
+
+    println("-" * 40)
+    println("%-20s %-10.3f".format("True probability", ExactProbabilitySolver.startProbability * 100.0))
   }
 
   def runBenchmark(attempts: Int): Unit = {
@@ -20,7 +23,8 @@ object StrategyBenchmark {
       "Random" -> RandomStrategy,
       "Greedy" -> GreedyStrategy,
       "Max Tiles" -> MaxTilesStrategy,
-      "Most Options" -> MostOptionsStrategy
+      "Most Options" -> MostOptionsStrategy,
+      "Highest Probability" -> HighestProbabilityStrategy
     )
 
     StrategyBenchmark.compareStrategies(attempts, strategies)
