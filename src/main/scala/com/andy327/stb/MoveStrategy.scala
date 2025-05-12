@@ -42,6 +42,23 @@ trait MoveStrategy {
   def chooseMove(open: State, rollTotal: Roll): Option[Move]
 }
 
+trait HeuristicStrategy extends MoveStrategy {
+  def stateOrdering: Ordering[State]
+
+  /** Precomputed best move for every (open tiles, roll total) pair */
+  lazy val decisionTree: Map[(State, Roll), Move] = {
+    for {
+      open <- MoveStrategy.allStates
+      (rollTotal, moves) <- MoveStrategy.combinations
+      validMoves = moves.filter(_.subsetOf(open))
+      if validMoves.nonEmpty
+      bestMove = validMoves.min(stateOrdering)
+    } yield (open, rollTotal) -> bestMove
+  }.toMap
+
+  def chooseMove(open: State, rollTotal: Roll): Option[Move] = decisionTree.get((open, rollTotal))
+}
+
 object RandomStrategy extends MoveStrategy {
   private val rand = new scala.util.Random
 
@@ -55,45 +72,31 @@ object RandomStrategy extends MoveStrategy {
   }
 }
 
-object GreedyStrategy extends MoveStrategy {
-  val greedyOrdering: Ordering[Move] = { // order by highest numbers closed and then fewest tiles closed
-    val byMaxDesc = Ordering.by[Move, Int](_.max).reverse
-    val bySizeAsc = Ordering.by[Move, Int](_.size)
+object GreedyStrategy extends HeuristicStrategy {
+  val stateOrdering: Ordering[State] = {
+    val byMaxDesc = Ordering.by[Move, Int](_.max).reverse // prefer closing higher tile values
+    val bySizeAsc = Ordering.by[Move, Int](_.size)        // prefer closing fewer tiles
     byMaxDesc.orElse(bySizeAsc)
   }
-
-  val sortedCombos: Map[Roll, List[Move]] = MoveStrategy.combinations.view.mapValues(_.sorted(greedyOrdering)).toMap
-
-  def chooseMove(open: State, rollTotal: Roll): Option[Move] = sortedCombos(rollTotal).find(_.subsetOf(open))
 }
 
-object MaxTilesStrategy extends MoveStrategy {
-  val maxTilesOrdering: Ordering[Move] = { // order by highest number of tiles closed and then highest numbers closed
-    val bySizeDesc = Ordering.by[Move, Int](_.size).reverse
-    val byMaxDesc = Ordering.by[Move, Int](_.max).reverse
+object MaxTilesStrategy extends HeuristicStrategy {
+  val stateOrdering: Ordering[State] = {
+    val bySizeDesc = Ordering.by[Move, Int](_.size).reverse // maximize number of tiles closed
+    val byMaxDesc = Ordering.by[Move, Int](_.max).reverse   // prefer closing higher tile values
     bySizeDesc.orElse(byMaxDesc)
   }
-
-  val sortedCombos: Map[Roll, List[Move]] = MoveStrategy.combinations.view.mapValues(_.sorted(maxTilesOrdering)).toMap
-
-  def chooseMove(open: State, rollTotal: Roll): Option[Move] = sortedCombos(rollTotal).find(_.subsetOf(open))
 }
 
-object MostOptionsStrategy extends MoveStrategy {
-  def chooseMove(open: State, rollTotal: Roll): Option[Move] =
-    MoveStrategy.combinations(rollTotal)
-      .filter(_.subsetOf(open))
-      .map { combo =>
-        val remaining = open -- combo
-        val score = (
-          MoveStrategy.numValidRolls(remaining), // maximize future options
-          combo.max,                             // then prefer higher tiles
-          -combo.size                            // then prefer fewer tiles
-        )
-        combo -> score
-      }
-      .maxByOption(_._2)
-      .map(_._1)
+object MostOptionsStrategy extends HeuristicStrategy {
+  val stateOrdering: Ordering[State] = Ordering.by { combo: Move =>
+    val remaining = MoveStrategy.allTiles -- combo
+    (
+      -MoveStrategy.numValidRolls(remaining), // maximize valid future rolls
+      -combo.max,                             // prefer closing higher tile values
+      combo.size                              // prefer closing fewer tiles
+    )
+  }
 }
 
 object HighestProbabilityStrategy extends MoveStrategy {
