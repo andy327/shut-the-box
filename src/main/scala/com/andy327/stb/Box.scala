@@ -10,6 +10,6 @@ case class Box(closed: Set[Int] = Set.empty) {
   val isShut: Boolean = closed.size == 9
   val open: State = MoveStrategy.allTiles -- closed
 
-  def closeWith(rollTotal: Roll, stategy: MoveStrategy): Option[Box] =
-    stategy.chooseMove(open, rollTotal).map(closing => Box(closed ++ closing))
+  def closeWith(rollTotal: Roll, strategy: MoveStrategy): Option[Box] =
+    strategy.chooseMove(open, rollTotal).map(closing => Box(closed ++ closing))
 }

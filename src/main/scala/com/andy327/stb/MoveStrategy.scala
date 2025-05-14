@@ -22,7 +22,7 @@ object MoveStrategy {
     .view.mapValues(_.size)
     .toMap
 
-  /** Pre-computed map of sets of open tiles and the number of dice rolls that can be played in the next move */
+  /** Precomputed map of sets of open tiles and the number of dice rolls that can be played in the next move */
   val numValidRolls: Map[State, Int] = allStates
     .map(combo => combo -> successfulNextRolls(combo))
     .toMap
